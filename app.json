@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "Countify",
-    "slug": "Countify",
+    "slug": "countify",
+    "owner": "frnkhakim",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -21,6 +22,11 @@
     "web": {},
     "plugins": [
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "7f2ad120-a0f0-4599-989a-5ee5c07d9c38"
+      }
+    }
   }
 }
