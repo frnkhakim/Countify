@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,27 @@ import { Ionicons } from "@expo/vector-icons";
 import EventCard from "../components/EventCard";
 
 export default function HomeScreen({ navigation }) {
+  const [events, setEvents] = useState([
+    {
+      id: 1,
+      title: "Birthday",
+      daysLeft: 12,
+      emoji: "🎂",
+    },
+    {
+      id: 2,
+      title: "Vacation",
+      daysLeft: 125,
+      emoji: "✈️",
+    },
+    {
+      id: 3,
+      title: "Exam",
+      daysLeft: 30,
+      emoji: "📚",
+    },
+  ]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>
@@ -21,25 +42,34 @@ export default function HomeScreen({ navigation }) {
         Upcoming Events
       </Text>
 
-      <ScrollView>
-        <EventCard
-          title="Birthday"
-          daysLeft={12}
-          emoji="🎂"
-        />
+      {events.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons
+            name="calendar-outline"
+            size={80}
+            color="gray"
+          />
 
-        <EventCard
-          title="Vacation"
-          daysLeft={125}
-          emoji="✈️"
-        />
+          <Text style={styles.emptyText}>
+            No Events Yet
+          </Text>
 
-        <EventCard
-          title="Exam"
-          daysLeft={30}
-          emoji="📚"
-        />
-      </ScrollView>
+          <Text style={styles.emptySubText}>
+            Tap + to create your first countdown.
+          </Text>
+        </View>
+      ) : (
+        <ScrollView>
+          {events.map((event) => (
+            <EventCard
+              key={event.id}
+              title={event.title}
+              daysLeft={event.daysLeft}
+              emoji={event.emoji}
+            />
+          ))}
+        </ScrollView>
+      )}
 
       <TouchableOpacity
         style={styles.fab}
@@ -88,5 +118,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#4F46E5",
     elevation: 6,
+  },
+
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  emptyText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginTop: 20,
+  },
+
+  emptySubText: {
+    color: "gray",
+    marginTop: 10,
   },
 });
