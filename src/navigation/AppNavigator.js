@@ -19,7 +19,11 @@ export default function AppNavigator() {
       <Stack.Screen
         name="AddEvent"
         component={AddEventScreen}
-        options={{ title: "Add Event" }}
+        options={({ route }) => ({
+          title: route.params?.isEditing
+            ? "Edit Event"
+            : "Add Event",
+        })}
       />
 
       <Stack.Screen

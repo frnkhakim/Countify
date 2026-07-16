@@ -9,23 +9,20 @@ import {
   Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useTheme } from "../context/ThemeContext";
 
-export default function AddEventScreen({
-  navigation,
-  route,
-}) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [emoji, setEmoji] = useState("🎂");
-  const [date, setDate] = useState(new Date());
+export default function AddEventScreen({ navigation, route }) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
 
-  const [showDatePicker, setShowDatePicker] =
-    useState(false);
+  const { event, isEditing, updateEvent, addEvent } = route.params;
 
-  const [showTimePicker, setShowTimePicker] =
-    useState(false);
-
-  const { addEvent } = route.params;
+  const [title, setTitle] = useState(event?.title ?? "");
+  const [description, setDescription] = useState(event?.description ?? "");
+  const [emoji, setEmoji] = useState(event?.emoji ?? "🎂");
+  const [date, setDate] = useState(event ? new Date(event.date) : new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
 
   const saveEvent = () => {
     if (!title.trim()) {
@@ -37,15 +34,19 @@ export default function AddEventScreen({
       return;
     }
 
-    const event = {
-      id: Date.now(),
+    const newEvent = {
+      id: event?.id ?? Date.now(),
       title,
       description,
       date,
       emoji,
     };
 
-    addEvent(event);
+    if (isEditing) {
+      updateEvent(newEvent);
+    } else {
+      addEvent(newEvent);
+    }
 
     navigation.goBack();
   };
@@ -65,6 +66,7 @@ export default function AddEventScreen({
         <TextInput
           style={styles.input}
           placeholder="Birthday"
+          placeholderTextColor={theme.subtext}
           value={title}
           onChangeText={setTitle}
         />
@@ -76,6 +78,7 @@ export default function AddEventScreen({
         <TextInput
           style={[styles.input, styles.multiline]}
           placeholder="Enter event notes..."
+          placeholderTextColor={theme.subtext}
           multiline
           value={description}
           onChangeText={setDescription}
@@ -89,7 +92,7 @@ export default function AddEventScreen({
           style={styles.dateButton}
           onPress={() => setShowDatePicker(true)}
         >
-          <Text>
+          <Text style={styles.dateText}>
             {date.toDateString()}
           </Text>
         </TouchableOpacity>
@@ -102,7 +105,7 @@ export default function AddEventScreen({
           style={styles.dateButton}
           onPress={() => setShowTimePicker(true)}
         >
-          <Text>
+          <Text style={styles.dateText}>
             {date.toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -121,8 +124,7 @@ export default function AddEventScreen({
                 key={item}
                 style={[
                   styles.emojiButton,
-                  emoji === item &&
-                    styles.selectedEmoji,
+                  emoji === item && styles.selectedEmoji,
                 ]}
                 onPress={() => setEmoji(item)}
               >
@@ -156,17 +158,9 @@ export default function AddEventScreen({
             if (selectedDate) {
               const newDate = new Date(date);
 
-              newDate.setFullYear(
-                selectedDate.getFullYear()
-              );
-
-              newDate.setMonth(
-                selectedDate.getMonth()
-              );
-
-              newDate.setDate(
-                selectedDate.getDate()
-              );
+              newDate.setFullYear(selectedDate.getFullYear());
+              newDate.setMonth(selectedDate.getMonth());
+              newDate.setDate(selectedDate.getDate());
 
               setDate(newDate);
             }
@@ -185,13 +179,8 @@ export default function AddEventScreen({
             if (selectedTime) {
               const newDate = new Date(date);
 
-              newDate.setHours(
-                selectedTime.getHours()
-              );
-
-              newDate.setMinutes(
-                selectedTime.getMinutes()
-              );
+              newDate.setHours(selectedTime.getHours());
+              newDate.setMinutes(selectedTime.getMinutes());
 
               setDate(newDate);
             }
@@ -202,75 +191,83 @@ export default function AddEventScreen({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F4F6FA",
-    padding: 20,
-  },
+function makeStyles(theme) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background,
+      padding: 20,
+    },
 
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 8,
-    marginTop: 20,
-  },
+    label: {
+      fontSize: 16,
+      fontWeight: "600",
+      marginBottom: 8,
+      marginTop: 20,
+      color: theme.text,
+    },
 
-  input: {
-    backgroundColor: "white",
-    borderRadius: 15,
-    padding: 15,
-    fontSize: 16,
-  },
+    input: {
+      backgroundColor: theme.card,
+      borderRadius: 15,
+      padding: 15,
+      fontSize: 16,
+      color: theme.text,
+    },
 
-  multiline: {
-    height: 120,
-    textAlignVertical: "top",
-  },
+    multiline: {
+      height: 120,
+      textAlignVertical: "top",
+    },
 
-  dateButton: {
-    backgroundColor: "white",
-    padding: 18,
-    borderRadius: 15,
-  },
+    dateButton: {
+      backgroundColor: theme.card,
+      padding: 18,
+      borderRadius: 15,
+    },
 
-  emojiContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 10,
-  },
+    dateText: {
+      color: theme.text,
+    },
 
-  emojiButton: {
-    width: 60,
-    height: 60,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 15,
-    marginRight: 10,
-    marginBottom: 10,
-  },
+    emojiContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginTop: 10,
+    },
 
-  selectedEmoji: {
-    borderWidth: 2,
-    borderColor: "#4F46E5",
-  },
+    emojiButton: {
+      width: 60,
+      height: 60,
+      backgroundColor: theme.card,
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: 15,
+      marginRight: 10,
+      marginBottom: 10,
+    },
 
-  emoji: {
-    fontSize: 28,
-  },
+    selectedEmoji: {
+      borderWidth: 2,
+      borderColor: theme.primary,
+    },
 
-  saveButton: {
-    backgroundColor: "#4F46E5",
-    padding: 18,
-    borderRadius: 15,
-    marginTop: 40,
-    alignItems: "center",
-  },
+    emoji: {
+      fontSize: 28,
+    },
 
-  saveText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 18,
-  },
-});
+    saveButton: {
+      backgroundColor: theme.primary,
+      padding: 18,
+      borderRadius: 15,
+      marginTop: 40,
+      alignItems: "center",
+    },
+
+    saveText: {
+      color: "white",
+      fontWeight: "bold",
+      fontSize: 18,
+    },
+  });
+}

@@ -1,12 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
-export default function EventCard({
-  title,
-  daysLeft,
-  emoji,
-  onPress,
-}) {
+export default function EventCard({ title, daysLeft, emoji, onPress }) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -29,29 +28,32 @@ export default function EventCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#fff",
-    padding: 20,
-    marginBottom: 15,
-    borderRadius: 15,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 4,
-  },
+function makeStyles(theme) {
+  return StyleSheet.create({
+    card: {
+      backgroundColor: theme.card,
+      padding: 20,
+      marginBottom: 15,
+      borderRadius: 15,
+      flexDirection: "row",
+      alignItems: "center",
+      elevation: 4,
+    },
 
-  emoji: {
-    fontSize: 30,
-    marginRight: 15,
-  },
+    emoji: {
+      fontSize: 30,
+      marginRight: 15,
+    },
 
-  title: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+    title: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: theme.text,
+    },
 
-  days: {
-    color: "gray",
-    marginTop: 5,
-  },
-});
+    days: {
+      color: theme.subtext,
+      marginTop: 5,
+    },
+  });
+}
