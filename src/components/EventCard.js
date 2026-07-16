@@ -1,13 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function EventCard({
   title,
   daysLeft,
   emoji,
+  onPress,
 }) {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+    >
       <Text style={styles.emoji}>
         {emoji}
       </Text>
@@ -21,7 +25,7 @@ export default function EventCard({
           {daysLeft} Days Left
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

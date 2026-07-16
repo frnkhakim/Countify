@@ -6,10 +6,14 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
-export default function AddEventScreen() {
+export default function AddEventScreen({
+  navigation,
+  route,
+}) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [emoji, setEmoji] = useState("🎂");
@@ -20,6 +24,31 @@ export default function AddEventScreen() {
 
   const [showTimePicker, setShowTimePicker] =
     useState(false);
+
+  const { addEvent } = route.params;
+
+  const saveEvent = () => {
+    if (!title.trim()) {
+      Alert.alert(
+        "Validation",
+        "Please enter an event name."
+      );
+
+      return;
+    }
+
+    const event = {
+      id: Date.now(),
+      title,
+      description,
+      date,
+      emoji,
+    };
+
+    addEvent(event);
+
+    navigation.goBack();
+  };
 
   return (
     <>
@@ -105,7 +134,10 @@ export default function AddEventScreen() {
           )}
         </View>
 
-        <TouchableOpacity style={styles.saveButton}>
+        <TouchableOpacity
+          style={styles.saveButton}
+          onPress={saveEvent}
+        >
           <Text style={styles.saveText}>
             Save Event
           </Text>

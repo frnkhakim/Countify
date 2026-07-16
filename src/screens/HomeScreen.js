@@ -10,6 +10,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import EventCard from "../components/EventCard";
 
+import {
+  getDaysRemaining,
+} from "../utils/dateUtils";
+
 export default function HomeScreen({ navigation }) {
   const [events, setEvents] = useState([
     {
@@ -64,8 +68,20 @@ export default function HomeScreen({ navigation }) {
             <EventCard
               key={event.id}
               title={event.title}
-              daysLeft={event.daysLeft}
               emoji={event.emoji}
+              daysLeft={
+                getDaysRemaining(
+                  new Date(event.date)
+                )
+              }
+              onPress={() =>
+                navigation.navigate(
+                  "Details",
+                  {
+                    event,
+                  }
+                )
+              }
             />
           ))}
         </ScrollView>
@@ -74,7 +90,14 @@ export default function HomeScreen({ navigation }) {
       <TouchableOpacity
         style={styles.fab}
         onPress={() =>
-          navigation.navigate("AddEvent")
+          navigation.navigate("AddEvent", {
+            addEvent: (event) => {
+              setEvents((previous) => [
+                ...previous,
+                event,
+              ]);
+            },
+          })
         }
       >
         <Ionicons
