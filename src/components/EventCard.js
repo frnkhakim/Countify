@@ -1,10 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { useTheme } from "../context/ThemeContext";
+import { calculateProgress } from "../utils/dateUtils";
 
-export default function EventCard({ title, daysLeft, emoji, onPress }) {
+function EventCard({ title, daysLeft, emoji, onPress, date, createdAt }) {
   const theme = useTheme();
   const styles = makeStyles(theme);
+
+  const progress = calculateProgress(date, createdAt);
 
   return (
     <TouchableOpacity
@@ -15,7 +18,7 @@ export default function EventCard({ title, daysLeft, emoji, onPress }) {
         {emoji}
       </Text>
 
-      <View>
+      <View style={styles.info}>
         <Text style={styles.title}>
           {title}
         </Text>
@@ -23,10 +26,23 @@ export default function EventCard({ title, daysLeft, emoji, onPress }) {
         <Text style={styles.days}>
           {daysLeft} Days Left
         </Text>
+
+        {createdAt && (
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progressFill,
+                { width: `${progress}%` },
+              ]}
+            />
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
 }
+
+export default React.memo(EventCard);
 
 function makeStyles(theme) {
   return StyleSheet.create({
@@ -45,6 +61,10 @@ function makeStyles(theme) {
       marginRight: 15,
     },
 
+    info: {
+      flex: 1,
+    },
+
     title: {
       fontSize: 18,
       fontWeight: "bold",
@@ -54,6 +74,20 @@ function makeStyles(theme) {
     days: {
       color: theme.subtext,
       marginTop: 5,
+    },
+
+    progressBar: {
+      height: 6,
+      backgroundColor: theme.background,
+      borderRadius: 3,
+      marginTop: 10,
+      overflow: "hidden",
+    },
+
+    progressFill: {
+      height: 6,
+      backgroundColor: theme.primary,
+      borderRadius: 3,
     },
   });
 }

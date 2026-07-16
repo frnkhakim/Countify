@@ -1,24 +1,35 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   TextInput,
+  Animated,
 } from "react-native";
 
-import { saveEvents, loadEvents } from "../storage/eventStorage";
 import { Ionicons } from "@expo/vector-icons";
 import EventCard from "../components/EventCard";
 import { getDaysRemaining } from "../utils/dateUtils";
 import { useTheme } from "../context/ThemeContext";
+import { useEvents } from "../context/EventsContext";
 
 export default function HomeScreen({ navigation }) {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const { events } = useEvents();
 
-  const [events, setEvents] = useState([]);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
   const [searchText, setSearchText] = useState("");
 
   const filteredEvents = events
@@ -35,32 +46,7 @@ export default function HomeScreen({ navigation }) {
     (event) => new Date(event.date) <= new Date()
   );
 
-  const deleteEvent = (id) => {
-    setEvents((previous) =>
-      previous.filter((event) => event.id !== id)
-    );
-  };
-
-  const updateEvent = (updatedEvent) => {
-    setEvents((previous) =>
-      previous.map((event) =>
-        event.id === updatedEvent.id ? updatedEvent : event
-      )
-    );
-  };
-
-  const loadSavedEvents = async () => {
-    const storedEvents = await loadEvents();
-    setEvents(storedEvents);
-  };
-
-  useEffect(() => {
-    loadSavedEvents();
-  }, []);
-
-  useEffect(() => {
-    saveEvents(events);
-  }, [events]);
+  const nextEvent = upcomingEvents[0];
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -80,19 +66,52 @@ export default function HomeScreen({ navigation }) {
     });
   }, [theme]);
 
+  const renderEvent = ({ item }) => (
+    <EventCard
+      title={item.title}
+      emoji={item.emoji}
+      date={item.date}
+      createdAt={item.createdAt}
+      daysLeft={getDaysRemaining(new Date(item.date))}
+      onPress={() =>
+        navigation.navigate("Details", { eventId: item.id })
+      }
+    />
+  );
+
+  const listFooter = expiredEvents.length > 0 ? (
+    <>
+      <Text style={styles.sectionTitle}>Past Events</Text>
+
+      {expiredEvents.map((event) => (
+        <EventCard
+          key={event.id}
+          title={event.title}
+          emoji={event.emoji}
+          date={event.date}
+          createdAt={event.createdAt}
+          daysLeft={0}
+          onPress={() =>
+            navigation.navigate("Details", { eventId: event.id })
+          }
+        />
+      ))}
+    </>
+  ) : null;
+
+  const emptyComponent = events.length === 0 ? (
+    <View style={styles.emptyContainer}>
+      <Ionicons name="calendar-outline" size={80} color={theme.subtext} />
+      <Text style={styles.emptyText}>No Events Yet</Text>
+      <Text style={styles.emptySubText}>Create your next important memory.</Text>
+    </View>
+  ) : null;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>
-        Countify
-      </Text>
-
-      <Text style={styles.subHeading}>
-        Upcoming Events
-      </Text>
-
-      <Text style={styles.counter}>
-        {upcomingEvents.length} Upcoming Events
-      </Text>
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <Text style={styles.greeting}>Hello 👋</Text>
+      <Text style={styles.heading}>Countify</Text>
+      <Text style={styles.counter}>{upcomingEvents.length} Upcoming Events</Text>
 
       <TextInput
         style={styles.searchInput}
@@ -102,98 +121,34 @@ export default function HomeScreen({ navigation }) {
         onChangeText={setSearchText}
       />
 
-      {events.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="calendar-outline"
-            size={80}
-            color={theme.subtext}
-          />
-
-          <Text style={styles.emptyText}>
-            No Events Yet
+      {nextEvent && (
+        <View style={styles.nextEventCard}>
+          <Text style={styles.nextEventLabel}>Next Event</Text>
+          <Text style={styles.nextEventTitle}>
+            {nextEvent.emoji} {nextEvent.title}
           </Text>
-
-          <Text style={styles.emptySubText}>
-            Tap + to create your first countdown.
+          <Text style={styles.nextEventDays}>
+            {getDaysRemaining(new Date(nextEvent.date))} Days Left
           </Text>
         </View>
-      ) : filteredEvents.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Ionicons
-            name="search"
-            size={70}
-            color={theme.subtext}
-          />
-
-          <Text style={styles.emptyText}>
-            No Matching Events
-          </Text>
-        </View>
-      ) : (
-        <ScrollView>
-          {upcomingEvents.map((event) => (
-            <EventCard
-              key={event.id}
-              title={event.title}
-              emoji={event.emoji}
-              daysLeft={getDaysRemaining(new Date(event.date))}
-              onPress={() =>
-                navigation.navigate("Details", {
-                  event,
-                  deleteEvent,
-                  updateEvent,
-                })
-              }
-            />
-          ))}
-
-          {expiredEvents.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>
-                Past Events
-              </Text>
-
-              {expiredEvents.map((event) => (
-                <EventCard
-                  key={event.id}
-                  title={event.title}
-                  emoji={event.emoji}
-                  daysLeft={0}
-                  onPress={() =>
-                    navigation.navigate("Details", {
-                      event,
-                      deleteEvent,
-                      updateEvent,
-                    })
-                  }
-                />
-              ))}
-            </>
-          )}
-        </ScrollView>
       )}
+
+      <FlatList
+        data={upcomingEvents}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderEvent}
+        ListFooterComponent={listFooter}
+        ListEmptyComponent={emptyComponent}
+        showsVerticalScrollIndicator={false}
+      />
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() =>
-          navigation.navigate("AddEvent", {
-            addEvent: (event) => {
-              setEvents((previous) => [
-                ...previous,
-                event,
-              ]);
-            },
-          })
-        }
+        onPress={() => navigation.navigate("AddEvent")}
       >
-        <Ionicons
-          name="add"
-          size={35}
-          color="white"
-        />
+        <Ionicons name="add" size={35} color="white" />
       </TouchableOpacity>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -205,23 +160,23 @@ function makeStyles(theme) {
       backgroundColor: theme.background,
     },
 
+    greeting: {
+      fontSize: 18,
+      color: theme.subtext,
+      marginTop: 20,
+    },
+
     heading: {
       fontSize: 34,
       fontWeight: "bold",
-      marginTop: 20,
       color: theme.text,
-    },
-
-    subHeading: {
-      fontSize: 18,
-      color: theme.subtext,
-      marginBottom: 25,
-      marginTop: 10,
+      marginBottom: 5,
     },
 
     counter: {
       color: theme.subtext,
       marginBottom: 20,
+      marginTop: 5,
     },
 
     searchInput: {
@@ -230,6 +185,31 @@ function makeStyles(theme) {
       borderRadius: 15,
       marginBottom: 20,
       color: theme.text,
+    },
+
+    nextEventCard: {
+      backgroundColor: theme.primary,
+      padding: 25,
+      borderRadius: 25,
+      marginBottom: 25,
+    },
+
+    nextEventLabel: {
+      color: "rgba(255,255,255,0.7)",
+      fontSize: 14,
+      marginBottom: 8,
+    },
+
+    nextEventTitle: {
+      color: "white",
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 8,
+    },
+
+    nextEventDays: {
+      color: "rgba(255,255,255,0.85)",
+      fontSize: 16,
     },
 
     fab: {
@@ -257,6 +237,7 @@ function makeStyles(theme) {
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
+      paddingTop: 60,
     },
 
     emptyText: {

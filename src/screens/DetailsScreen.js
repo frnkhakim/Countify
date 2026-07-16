@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,121 +8,78 @@ import {
   Alert,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
+import { useEvents } from "../context/EventsContext";
+import useCountdown from "../hooks/useCountdown";
 
 export default function DetailsScreen({ route, navigation }) {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const { events, deleteEvent, updateEvent } = useEvents();
 
-  const { event, deleteEvent, updateEvent } = route.params;
+  const { eventId } = route.params;
+  const event = events.find((e) => e.id === eventId);
 
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  const timeLeft = useCountdown(event?.date);
 
-  function calculateTimeLeft() {
-    const difference = new Date(event.date) - new Date();
-
-    if (difference <= 0) {
-      return {
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-      };
-    }
-
-    return {
-      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-      minutes: Math.floor((difference / (1000 * 60)) % 60),
-      seconds: Math.floor((difference / 1000) % 60),
-    };
+  if (!event) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ color: theme.text }}>Event not found.</Text>
+      </View>
+    );
   }
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
   const removeEvent = () => {
-    Alert.alert(
-      "Delete Event",
-      "Are you sure?",
-      [
-        {
-          text: "Cancel",
+    Alert.alert("Delete Event", "Are you sure?", [
+      { text: "Cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteEvent(event.id);
+          navigation.goBack();
         },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: () => {
-            deleteEvent(event.id);
-            navigation.goBack();
-          },
-        },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-    >
-      <Text style={styles.emoji}>
-        {event.emoji}
-      </Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.emoji}>{event.emoji}</Text>
+      <Text style={styles.title}>{event.title}</Text>
 
-      <Text style={styles.title}>
-        {event.title}
-      </Text>
+      {timeLeft.expired ? (
+        <Text style={styles.expired}>Event Completed 🎉</Text>
+      ) : (
+        <View style={styles.countdown}>
+          <View style={styles.timeCard}>
+            <Text style={styles.number}>{timeLeft.days}</Text>
+            <Text style={styles.timeLabel}>Days</Text>
+          </View>
 
-      <View style={styles.countdown}>
-        <View style={styles.timeCard}>
-          <Text style={styles.number}>
-            {timeLeft.days}
-          </Text>
+          <View style={styles.timeCard}>
+            <Text style={styles.number}>{timeLeft.hours}</Text>
+            <Text style={styles.timeLabel}>Hours</Text>
+          </View>
 
-          <Text style={styles.timeLabel}>Days</Text>
+          <View style={styles.timeCard}>
+            <Text style={styles.number}>{timeLeft.minutes}</Text>
+            <Text style={styles.timeLabel}>Minutes</Text>
+          </View>
+
+          <View style={styles.timeCard}>
+            <Text style={styles.number}>{timeLeft.seconds}</Text>
+            <Text style={styles.timeLabel}>Seconds</Text>
+          </View>
         </View>
+      )}
 
-        <View style={styles.timeCard}>
-          <Text style={styles.number}>
-            {timeLeft.hours}
-          </Text>
-
-          <Text style={styles.timeLabel}>Hours</Text>
-        </View>
-
-        <View style={styles.timeCard}>
-          <Text style={styles.number}>
-            {timeLeft.minutes}
-          </Text>
-
-          <Text style={styles.timeLabel}>Minutes</Text>
-        </View>
-
-        <View style={styles.timeCard}>
-          <Text style={styles.number}>
-            {timeLeft.seconds}
-          </Text>
-
-          <Text style={styles.timeLabel}>Seconds</Text>
-        </View>
-      </View>
-
-      <Text style={styles.section}>
-        Description
-      </Text>
-
+      <Text style={styles.section}>Description</Text>
       <Text style={styles.description}>
         {event.description || "No Description"}
       </Text>
 
-      <Text style={styles.section}>
-        Event Date
-      </Text>
-
+      <Text style={styles.section}>Event Date</Text>
       <Text style={styles.description}>
         {new Date(event.date).toLocaleString()}
       </Text>
@@ -132,24 +89,16 @@ export default function DetailsScreen({ route, navigation }) {
           style={styles.editButton}
           onPress={() =>
             navigation.navigate("AddEvent", {
-              event,
+              eventId: event.id,
               isEditing: true,
-              updateEvent,
             })
           }
         >
-          <Text style={styles.buttonText}>
-            Edit
-          </Text>
+          <Text style={styles.buttonText}>Edit</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={removeEvent}
-        >
-          <Text style={styles.buttonText}>
-            Delete
-          </Text>
+        <TouchableOpacity style={styles.deleteButton} onPress={removeEvent}>
+          <Text style={styles.buttonText}>Delete</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -176,6 +125,13 @@ function makeStyles(theme) {
       fontWeight: "bold",
       marginTop: 20,
       color: theme.text,
+    },
+
+    expired: {
+      color: "#10B981",
+      fontSize: 22,
+      fontWeight: "bold",
+      marginTop: 30,
     },
 
     countdown: {

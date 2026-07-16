@@ -5,12 +5,18 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "icon": "./countify.png",
+    "splash": {
+      "image": "./countify.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#4F46E5"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.frankhakim.countify"
     },
     "android": {
-      "edgeToEdgeEnabled": true
+      "package": "com.frankhakim.countify"
     },
     "web": {},
     "plugins": [

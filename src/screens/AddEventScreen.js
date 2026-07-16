@@ -10,12 +10,16 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useTheme } from "../context/ThemeContext";
+import { useEvents } from "../context/EventsContext";
+import { scheduleEventNotification } from "../utils/notificationUtils";
 
 export default function AddEventScreen({ navigation, route }) {
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const { events, addEvent, updateEvent } = useEvents();
 
-  const { event, isEditing, updateEvent, addEvent } = route.params;
+  const { eventId, isEditing } = route.params ?? {};
+  const event = isEditing ? events.find((e) => e.id === eventId) : null;
 
   const [title, setTitle] = useState(event?.title ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
@@ -24,13 +28,9 @@ export default function AddEventScreen({ navigation, route }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const saveEvent = () => {
+  const saveEvent = async () => {
     if (!title.trim()) {
-      Alert.alert(
-        "Validation",
-        "Please enter an event name."
-      );
-
+      Alert.alert("Validation", "Please enter an event name.");
       return;
     }
 
@@ -40,12 +40,14 @@ export default function AddEventScreen({ navigation, route }) {
       description,
       date,
       emoji,
+      createdAt: event?.createdAt ?? new Date(),
     };
 
     if (isEditing) {
       updateEvent(newEvent);
     } else {
       addEvent(newEvent);
+      await scheduleEventNotification(newEvent);
     }
 
     navigation.goBack();
@@ -55,14 +57,9 @@ export default function AddEventScreen({ navigation, route }) {
     <>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{
-          paddingBottom: 40,
-        }}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
-        <Text style={styles.label}>
-          Event Name
-        </Text>
-
+        <Text style={styles.label}>Event Name</Text>
         <TextInput
           style={styles.input}
           placeholder="Birthday"
@@ -71,10 +68,7 @@ export default function AddEventScreen({ navigation, route }) {
           onChangeText={setTitle}
         />
 
-        <Text style={styles.label}>
-          Description
-        </Text>
-
+        <Text style={styles.label}>Description</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
           placeholder="Enter event notes..."
@@ -84,65 +78,42 @@ export default function AddEventScreen({ navigation, route }) {
           onChangeText={setDescription}
         />
 
-        <Text style={styles.label}>
-          Date
-        </Text>
-
+        <Text style={styles.label}>Date</Text>
         <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setShowDatePicker(true)}
         >
-          <Text style={styles.dateText}>
-            {date.toDateString()}
-          </Text>
+          <Text style={styles.dateText}>{date.toDateString()}</Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>
-          Time
-        </Text>
-
+        <Text style={styles.label}>Time</Text>
         <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setShowTimePicker(true)}
         >
           <Text style={styles.dateText}>
-            {date.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.label}>
-          Emoji
-        </Text>
-
+        <Text style={styles.label}>Emoji</Text>
         <View style={styles.emojiContainer}>
-          {["🎂", "🎉", "✈️", "📚", "❤️", "🏆"].map(
-            (item) => (
-              <TouchableOpacity
-                key={item}
-                style={[
-                  styles.emojiButton,
-                  emoji === item && styles.selectedEmoji,
-                ]}
-                onPress={() => setEmoji(item)}
-              >
-                <Text style={styles.emoji}>
-                  {item}
-                </Text>
-              </TouchableOpacity>
-            )
-          )}
+          {["🎂", "🎉", "✈️", "📚", "❤️", "🏆"].map((item) => (
+            <TouchableOpacity
+              key={item}
+              style={[
+                styles.emojiButton,
+                emoji === item && styles.selectedEmoji,
+              ]}
+              onPress={() => setEmoji(item)}
+            >
+              <Text style={styles.emoji}>{item}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        <TouchableOpacity
-          style={styles.saveButton}
-          onPress={saveEvent}
-        >
-          <Text style={styles.saveText}>
-            Save Event
-          </Text>
+        <TouchableOpacity style={styles.saveButton} onPress={saveEvent}>
+          <Text style={styles.saveText}>Save Event</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -152,16 +123,13 @@ export default function AddEventScreen({ navigation, route }) {
           mode="date"
           display="default"
           minimumDate={new Date()}
-          onChange={(event, selectedDate) => {
+          onChange={(e, selectedDate) => {
             setShowDatePicker(false);
-
             if (selectedDate) {
               const newDate = new Date(date);
-
               newDate.setFullYear(selectedDate.getFullYear());
               newDate.setMonth(selectedDate.getMonth());
               newDate.setDate(selectedDate.getDate());
-
               setDate(newDate);
             }
           }}
@@ -173,15 +141,12 @@ export default function AddEventScreen({ navigation, route }) {
           value={date}
           mode="time"
           display="default"
-          onChange={(event, selectedTime) => {
+          onChange={(e, selectedTime) => {
             setShowTimePicker(false);
-
             if (selectedTime) {
               const newDate = new Date(date);
-
               newDate.setHours(selectedTime.getHours());
               newDate.setMinutes(selectedTime.getMinutes());
-
               setDate(newDate);
             }
           }}
