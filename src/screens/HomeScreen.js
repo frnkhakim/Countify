@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,34 +7,26 @@ import {
   TouchableOpacity,
 } from "react-native";
 
+import { saveEvents, loadEvents } from "../storage/eventStorage";
 import { Ionicons } from "@expo/vector-icons";
 import EventCard from "../components/EventCard";
-
-import {
-  getDaysRemaining,
-} from "../utils/dateUtils";
+import { getDaysRemaining } from "../utils/dateUtils";
 
 export default function HomeScreen({ navigation }) {
-  const [events, setEvents] = useState([
-    {
-      id: 1,
-      title: "Birthday",
-      daysLeft: 12,
-      emoji: "🎂",
-    },
-    {
-      id: 2,
-      title: "Vacation",
-      daysLeft: 125,
-      emoji: "✈️",
-    },
-    {
-      id: 3,
-      title: "Exam",
-      daysLeft: 30,
-      emoji: "📚",
-    },
-  ]);
+  const [events, setEvents] = useState([]);
+
+  const loadSavedEvents = async () => {
+    const storedEvents = await loadEvents();
+    setEvents(storedEvents);
+  };
+
+  useEffect(() => {
+    loadSavedEvents();
+  }, []);
+
+  useEffect(() => {
+    saveEvents(events);
+  }, [events]);
 
   return (
     <View style={styles.container}>
